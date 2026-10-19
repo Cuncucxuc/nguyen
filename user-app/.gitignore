@@ -1,0 +1,17 @@
+# Dependencies
+node_modules
+
+# Production build
+dist
+
+# Local environment variables
+.env
+.env.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor directories
+.vscode
+.idea
