@@ -7,7 +7,6 @@ import {
   Building2,
   Popcorn,
   Gift,
-  ShieldCheck,
   Clapperboard,
 } from 'lucide-react';
 
@@ -16,14 +15,40 @@ interface SidebarProps {
   onClose: () => void;
 }
 
+interface NavItem {
+  to: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+interface NavSection {
+  title: string;
+  items: NavItem[];
+}
+
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
-  const navItems = [
-    { to: '/', label: 'Tổng Quan', icon: LayoutDashboard },
-    { to: '/movies', label: 'Quản Lý Phim', icon: Film },
-    { to: '/bookings', label: 'Đơn Đặt Vé', icon: Ticket },
-    { to: '/cinemas', label: 'Cụm Rạp Chiếu', icon: Building2 },
-    { to: '/combos', label: 'Bắp Nước & Combo', icon: Popcorn },
-    { to: '/promotions', label: 'Ưu Đãi & Voucher', icon: Gift },
+  const navSections: NavSection[] = [
+    {
+      title: 'TỔNG QUAN',
+      items: [
+        { to: '/', label: 'Bảng Điều Khiển', icon: LayoutDashboard },
+      ],
+    },
+    {
+      title: 'VẬN HÀNH RẠP',
+      items: [
+        { to: '/movies', label: 'Quản Lý Phim', icon: Film },
+        { to: '/cinemas', label: 'Cụm Rạp Chiếu', icon: Building2 },
+      ],
+    },
+    {
+      title: 'KINH DOANH & DỊCH VỤ',
+      items: [
+        { to: '/bookings', label: 'Đơn Đặt Vé', icon: Ticket },
+        { to: '/combos', label: 'Bắp Nước & Combo', icon: Popcorn },
+        { to: '/promotions', label: 'Ưu Đãi & Voucher', icon: Gift },
+      ],
+    },
   ];
 
   return (
@@ -59,34 +84,57 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* Navigation Links */}
-        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
-          <div className="px-3 pb-2 text-[11px] font-bold tracking-wider text-gray-500 uppercase">
-            Menu Quản Lý
-          </div>
+        {/* Navigation Sections */}
+        <nav className="flex-1 px-4 py-5 space-y-6 overflow-y-auto">
+          {navSections.map((section, idx) => (
+            <div key={idx} className="space-y-1.5">
+              <div className="px-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase">
+                {section.title}
+              </div>
 
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                onClick={onClose}
-                end={item.to === '/'}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                    isActive
-                      ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-800/60'
-                  }`
-                }
-              >
-                <Icon className="w-4 h-4 flex-shrink-0" />
-                <span>{item.label}</span>
-              </NavLink>
-            );
-          })}
+              <div className="space-y-1">
+                {section.items.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      onClick={onClose}
+                      end={item.to === '/'}
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                          isActive
+                            ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
+                            : 'text-gray-400 hover:text-white hover:bg-gray-800/60'
+                        }`
+                      }
+                    >
+                      <Icon className="w-4 h-4 flex-shrink-0" />
+                      <span>{item.label}</span>
+                    </NavLink>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
+
+        {/* Footer Admin Profile */}
+        <div className="p-4 border-t border-[#23293b]">
+          <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-gray-900/60 border border-gray-800/80">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-red-600 to-amber-500 flex items-center justify-center text-white text-xs font-bold shadow-md">
+              AD
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="block text-xs font-bold text-gray-200 truncate">
+                Quản Trị Viên
+              </span>
+              <span className="block text-[10px] text-gray-400 truncate">
+                admin@cineviet.vn
+              </span>
+            </div>
+          </div>
+        </div>
       </aside>
     </>
   );
