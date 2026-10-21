@@ -1,0 +1,12 @@
+{
+  "name": "cineviet-workspace",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "npm --prefix user-app run dev",
+    "dev:user": "npm --prefix user-app run dev",
+    "dev:admin": "npm --prefix admin-app run dev",
+    "build:user": "npm --prefix user-app run build",
+    "build:admin": "npm --prefix admin-app run build"
+  }
+}

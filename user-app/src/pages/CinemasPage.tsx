@@ -1,11 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Phone, Clock, Film, Ticket, ChevronDown, ChevronUp, Navigation } from 'lucide-react';
-import { cinemas, showtimes, movies, showtimeDates } from '../data/mockData';
+import { cinemas, movies as defaultMovies, showtimeDates } from '../data/mockData';
+import { subscribeMovies } from '../firebase/movieService';
+import { getShowtimesForMovie } from '../utils/showtimeGenerator';
 
 export const CinemasPage: React.FC = () => {
+  const [allMovies, setAllMovies] = useState(defaultMovies);
   const [expandedCinemaId, setExpandedCinemaId] = useState<string | null>(cinemas[0]?.id || null);
   const [selectedDate, setSelectedDate] = useState<string>(showtimeDates[0] || '2026-10-18');
+
+  // Lắng nghe realtime danh sách phim mới nhất từ Firebase
+  useEffect(() => {
+    const unsub = subscribeMovies((data) => {
+      if (data && data.length > 0) setAllMovies(data);
+    });
+    return () => unsub();
+  }, []);
 
   const dates = showtimeDates;
 
@@ -58,19 +69,16 @@ export const CinemasPage: React.FC = () => {
           {cinemas.map((cinema) => {
             const isExpanded = expandedCinemaId === cinema.id;
 
-            // Lọc suất chiếu của rạp này theo ngày
-            const cinemaShowtimes = showtimes.filter(
-              (s) => s.cinemaId === cinema.id && s.date === selectedDate
-            );
-
-            // Gom nhóm suất chiếu theo phim
-            const moviesInCinema = Array.from(
-              new Set(cinemaShowtimes.map((s) => s.movieId))
-            ).map((movieId) => {
-              const movieObj = movies.find((m) => m.id === movieId);
-              const mShowtimes = cinemaShowtimes.filter((s) => s.movieId === movieId);
-              return { movie: movieObj, showtimes: mShowtimes };
-            }).filter((item) => item.movie !== undefined);
+            // Lấy danh sách phim đang chiếu và lọc suất chiếu của rạp này theo ngày (kể cả phim mới thêm từ Admin)
+            const nowShowing = allMovies.filter((m) => m.status === 'now_showing');
+            const moviesInCinema = nowShowing
+              .map((movieObj) => {
+                const mShowtimes = getShowtimesForMovie(movieObj.id, cinemas).filter(
+                  (s) => s.cinemaId === cinema.id && s.date === selectedDate
+                );
+                return { movie: movieObj, showtimes: mShowtimes };
+              })
+              .filter((item) => item.showtimes.length > 0);
 
             return (
               <div

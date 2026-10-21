@@ -18,6 +18,7 @@ import {
 import { Movie } from '../types';
 import { movies, cinemas, showtimes } from '../data/mockData';
 import { getMovieByIdFromFirestore } from '../firebase/movieService';
+import { getShowtimesForMovie } from '../utils/showtimeGenerator';
 import { getAgeRatingInfo, formatDateLabel, formatCurrency } from '../utils';
 
 export const MovieDetailPage: React.FC = () => {
@@ -40,71 +41,10 @@ export const MovieDetailPage: React.FC = () => {
     }
   }, [id]);
 
-  // Lọc lịch chiếu của phim này
+  // Lọc lịch chiếu của phim này (kết hợp cả phim tĩnh và phim mới thêm từ Admin)
   const movieShowtimes = useMemo(() => {
     if (!movie) return [];
-    const directShowtimes = showtimes ? showtimes.filter((st: any) => st.movieId === movie.id) : [];
-
-    // Nếu mockData chưa có showtimes cho phim này, tự sinh lịch chiếu mẫu đa dạng để hiển thị trực quan
-    if (directShowtimes.length === 0 && cinemas && cinemas.length > 0) {
-      const today = new Date();
-      const dates = [
-        today.toISOString().split('T')[0],
-        new Date(today.getTime() + 86400000).toISOString().split('T')[0],
-        new Date(today.getTime() + 172800000).toISOString().split('T')[0],
-      ];
-
-      const sampleList: any[] = [];
-      cinemas.forEach((c: any, cIdx: number) => {
-        dates.forEach((d) => {
-          sampleList.push(
-            {
-              id: `st-${movie.id}-${c.id}-${d}-1`,
-              movieId: movie.id,
-              cinemaId: c.id,
-              date: d,
-              startTime: '10:00',
-              roomName: 'Phòng 01',
-              format: '2D Phụ đề',
-              price: 85000,
-            },
-            {
-              id: `st-${movie.id}-${c.id}-${d}-2`,
-              movieId: movie.id,
-              cinemaId: c.id,
-              date: d,
-              startTime: '14:30',
-              roomName: 'Phòng 03',
-              format: cIdx === 0 ? 'IMAX 2D' : '2D Lồng tiếng',
-              price: cIdx === 0 ? 140000 : 95000,
-            },
-            {
-              id: `st-${movie.id}-${c.id}-${d}-3`,
-              movieId: movie.id,
-              cinemaId: c.id,
-              date: d,
-              startTime: '19:15',
-              roomName: 'Phòng VIP 02',
-              format: '2D Phụ đề',
-              price: 110000,
-            },
-            {
-              id: `st-${movie.id}-${c.id}-${d}-4`,
-              movieId: movie.id,
-              cinemaId: c.id,
-              date: d,
-              startTime: '21:45',
-              roomName: 'Phòng 04',
-              format: '3D Phụ đề',
-              price: 125000,
-            }
-          );
-        });
-      });
-      return sampleList;
-    }
-
-    return directShowtimes;
+    return getShowtimesForMovie(movie.id, cinemas);
   }, [movie]);
 
   // Danh sách các ngày chiếu có sẵn

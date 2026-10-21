@@ -1,10 +1,12 @@
 # Dependencies
 node_modules
 user-app/node_modules
+admin-app/node_modules
 
 # Production build
 dist
 user-app/dist
+admin-app/dist
 
 # Local environment variables
 .env

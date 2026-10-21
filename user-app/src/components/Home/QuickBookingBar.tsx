@@ -1,7 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Ticket, Film, MapPin, Calendar, Clock, ArrowRight } from 'lucide-react';
-import { movies, cinemas, showtimes } from '../../data/mockData';
+import { movies as defaultMovies, cinemas } from '../../data/mockData';
+import { subscribeMovies } from '../../firebase/movieService';
+import { getShowtimesForMovie } from '../../utils/showtimeGenerator';
 
 interface QuickBookingBarProps {
   onSuccess?: () => void;
@@ -9,26 +11,35 @@ interface QuickBookingBarProps {
 
 export const QuickBookingBar: React.FC<QuickBookingBarProps> = ({ onSuccess }) => {
   const navigate = useNavigate();
+  const [allMovies, setAllMovies] = useState(defaultMovies);
+
+  useEffect(() => {
+    const unsub = subscribeMovies((data) => {
+      if (data && data.length > 0) setAllMovies(data);
+    });
+    return () => unsub();
+  }, []);
 
   const nowShowingMovies = useMemo(() => {
-    return movies.filter((m) => m.status === 'now_showing');
-  }, []);
+    return allMovies.filter((m) => m.status === 'now_showing');
+  }, [allMovies]);
 
   const [selectedMovieId, setSelectedMovieId] = useState<string>(nowShowingMovies[0]?.id || '');
   const [selectedCinemaId, setSelectedCinemaId] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedShowtimeId, setSelectedShowtimeId] = useState<string>('');
 
-  // 1. Danh sách rạp có chiếu phim đã chọn
+  // 1. Danh sách rạp có chiếu phim đã chọn (hỗ trợ cả phim mới từ Admin)
   const availableCinemas = useMemo(() => {
     if (!selectedMovieId) return cinemas;
-    const movieShowtimes = showtimes.filter((s) => s.movieId === selectedMovieId);
+    const movieShowtimes = getShowtimesForMovie(selectedMovieId, cinemas);
     const cinemaIds = new Set(movieShowtimes.map((s) => s.cinemaId));
-    return cinemas.filter((c) => cinemaIds.has(c.id));
+    const matched = cinemas.filter((c) => cinemaIds.has(c.id));
+    return matched.length > 0 ? matched : cinemas;
   }, [selectedMovieId]);
 
   // Tự động chọn rạp đầu tiên nếu chưa chọn hoặc không hợp lệ
-  React.useEffect(() => {
+  useEffect(() => {
     if (availableCinemas.length > 0) {
       if (!availableCinemas.some((c) => c.id === selectedCinemaId)) {
         setSelectedCinemaId(availableCinemas[0].id);
@@ -41,8 +52,9 @@ export const QuickBookingBar: React.FC<QuickBookingBarProps> = ({ onSuccess }) =
   // 2. Danh sách ngày chiếu của phim và rạp đã chọn
   const availableDates = useMemo(() => {
     if (!selectedMovieId || !selectedCinemaId) return [];
-    const matched = showtimes.filter(
-      (s) => s.movieId === selectedMovieId && s.cinemaId === selectedCinemaId
+    const movieShowtimes = getShowtimesForMovie(selectedMovieId, cinemas);
+    const matched = movieShowtimes.filter(
+      (s) => s.cinemaId === selectedCinemaId
     );
     const dates = Array.from(new Set(matched.map((s) => s.date))).sort();
     return dates;
@@ -58,12 +70,12 @@ export const QuickBookingBar: React.FC<QuickBookingBarProps> = ({ onSuccess }) =
     }
   }, [availableDates, selectedDate]);
 
-  // 3. Danh sách suất chiếu tương ứng
+  // 3. Danh sách suất chiếu tương ứng (hỗ trợ cả phim mới từ Admin)
   const availableShowtimes = useMemo(() => {
     if (!selectedMovieId || !selectedCinemaId || !selectedDate) return [];
-    return showtimes.filter(
+    const movieShowtimes = getShowtimesForMovie(selectedMovieId, cinemas);
+    return movieShowtimes.filter(
       (s) =>
-        s.movieId === selectedMovieId &&
         s.cinemaId === selectedCinemaId &&
         s.date === selectedDate
     );

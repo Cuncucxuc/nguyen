@@ -15,6 +15,7 @@ import {
 import { Showtime, Seat, SelectedCombo, Booking } from '../types';
 import { movies, showtimes } from '../data/mockData';
 import { getMovieByIdFromFirestore } from '../firebase/movieService';
+import { findShowtimeById } from '../utils/showtimeGenerator';
 import { useAuth } from '../context/AuthContext';
 import { saveBookingToFirestore } from '../firebase/bookingService';
 import { BookingSteps } from '../components/Booking/BookingSteps';
@@ -59,7 +60,7 @@ export const BookingPage: React.FC = () => {
   // Auto-select showtime if showtimeId is provided in URL
   useEffect(() => {
     if (showtimeIdParam && !selectedShowtime) {
-      const foundSt = showtimes.find((st) => st.id === showtimeIdParam);
+      const foundSt = findShowtimeById(showtimeIdParam, movieId);
       if (foundSt) {
         setSelectedShowtime(foundSt);
         setCurrentStep(1); // Jump to seat selection

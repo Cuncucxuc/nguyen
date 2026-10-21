@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { MapPin, Calendar, Clock, Film, Sparkles, ChevronRight, CalendarX } from 'lucide-react';
 import { Showtime, Cinema } from '../../types';
-import { showtimes as allShowtimes, cinemas as allCinemas } from '../../data/mockData';
+import { cinemas as allCinemas } from '../../data/mockData';
+import { getShowtimesForMovie } from '../../utils/showtimeGenerator';
 import { formatCurrency } from '../../utils';
 
 interface ShowtimeSelectionProps {
@@ -57,11 +58,10 @@ export const ShowtimeSelection: React.FC<ShowtimeSelectionProps> = ({
     return next7Days[0]?.dateStr || '';
   });
 
-  // Filter showtimes for the movie and selected date
+  // Filter showtimes for the movie and selected date (kết hợp cả phim tĩnh và phim mới từ Admin)
   const filteredShowtimes = useMemo(() => {
-    return allShowtimes.filter(
-      (st) => st.movieId === movieId && st.date === selectedDate
-    );
+    const movieShowtimes = getShowtimesForMovie(movieId, allCinemas);
+    return movieShowtimes.filter((st) => st.date === selectedDate);
   }, [movieId, selectedDate]);
 
   // Group showtimes by Cinema
