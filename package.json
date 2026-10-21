@@ -6,6 +6,7 @@
     "dev": "npm --prefix user-app run dev",
     "dev:user": "npm --prefix user-app run dev",
     "dev:admin": "npm --prefix admin-app run dev",
+    "build": "npm --prefix admin-app run build",
     "build:user": "npm --prefix user-app run build",
     "build:admin": "npm --prefix admin-app run build"
   }
