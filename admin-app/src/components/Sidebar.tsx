@@ -92,7 +92,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         {/* Footer Info & Client Link */}
         <div className="p-4 border-t border-[#23293b] space-y-3">
           <a
-            href="http://localhost:5173"
+            href="https://xemphim-nguyen.vercel.app/"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-between px-3 py-2 rounded-xl bg-gray-850 hover:bg-gray-800 border border-gray-700/60 text-xs text-gray-300 hover:text-white transition group"
@@ -101,8 +101,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               <ExternalLink className="w-3.5 h-3.5 text-red-400" />
               <span>Xem Web Khách Hàng</span>
             </span>
-            <span className="text-[10px] bg-red-600/20 text-red-400 px-1.5 py-0.5 rounded font-mono">
-              :5173
+            <span className="text-[10px] bg-red-600/20 text-red-400 px-1.5 py-0.5 rounded font-mono font-semibold">
+              Live
             </span>
           </a>
 
