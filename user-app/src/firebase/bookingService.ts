@@ -7,9 +7,10 @@ import {
   where,
   updateDoc,
   serverTimestamp,
+  onSnapshot,
 } from 'firebase/firestore';
 import { db } from './config';
-import { Booking, UserProfile } from '../types';
+import { Booking, UserProfile, Showtime } from '../types';
 
 const LOCAL_STORAGE_KEY = 'cineviet_local_bookings';
 
@@ -147,5 +148,102 @@ export const cancelBookingInFirestore = async (bookingId: string): Promise<boole
   } catch (error) {
     console.warn('⚠️ Không thể cập nhật trạng thái hủy lên Firestore:', error);
     return false;
+  }
+};
+
+/**
+ * Kiểm tra xem một vé đặt có thuộc về suất chiếu cụ thể hay không
+ */
+const isBookingMatchShowtime = (b: Booking, st: Showtime, movieTitle?: string): boolean => {
+  if (b.status === 'cancelled') return false;
+  // Ưu tiên so khớp ID suất chiếu trực tiếp
+  if (b.showtimeId) {
+    return b.showtimeId === st.id;
+  }
+  // So khớp dự phòng nếu vé cũ chưa có showtimeId
+  const sameDate = b.date === st.date;
+  const sameTime = b.startTime === st.startTime;
+  const sameCinema = b.cinemaName ? b.cinemaName === st.cinemaName : false;
+  const sameRoom = b.roomName ? b.roomName === st.roomName : false;
+  const sameMovie = movieTitle && b.movieTitle ? b.movieTitle === movieTitle : true;
+  return sameDate && sameTime && sameCinema && sameRoom && sameMovie;
+};
+
+/**
+ * Lấy danh sách các ghế đã được đặt cho một suất chiếu cụ thể (kết hợp Firestore và LocalStorage)
+ */
+export const fetchBookedSeatsForShowtime = async (
+  showtime: Showtime,
+  movieTitle?: string
+): Promise<string[]> => {
+  const bookedSet = new Set<string>();
+
+  // 1. Kiểm tra LocalStorage
+  const localBookings = getLocalBookings();
+  localBookings.forEach((b) => {
+    if (isBookingMatchShowtime(b, showtime, movieTitle) && b.seatLabels) {
+      b.seatLabels.forEach((lbl) => bookedSet.add(lbl));
+    }
+  });
+
+  // 2. Kiểm tra Firestore
+  try {
+    const bookingsRef = collection(db, 'bookings');
+    const snapshot = await getDocs(bookingsRef);
+    snapshot.forEach((d) => {
+      const b = d.data() as Booking;
+      if (isBookingMatchShowtime(b, showtime, movieTitle) && b.seatLabels) {
+        b.seatLabels.forEach((lbl) => bookedSet.add(lbl));
+      }
+    });
+  } catch (error) {
+    console.warn('⚠️ Không thể lấy danh sách ghế đặt từ Firestore:', error);
+  }
+
+  return Array.from(bookedSet);
+};
+
+/**
+ * Lắng nghe cập nhật ghế đã đặt theo thời gian thực (Real-time listener) từ Firebase Firestore
+ */
+export const subscribeBookedSeatsForShowtime = (
+  showtime: Showtime,
+  onUpdate: (bookedSeatLabels: string[]) => void,
+  movieTitle?: string
+): (() => void) => {
+  // Đồng bộ ban đầu từ LocalStorage
+  const getFromLocal = () => {
+    const localBookings = getLocalBookings();
+    const set = new Set<string>();
+    localBookings.forEach((b) => {
+      if (isBookingMatchShowtime(b, showtime, movieTitle) && b.seatLabels) {
+        b.seatLabels.forEach((lbl) => set.add(lbl));
+      }
+    });
+    return set;
+  };
+
+  try {
+    const bookingsRef = collection(db, 'bookings');
+    return onSnapshot(
+      bookingsRef,
+      (snapshot) => {
+        const bookedSet = getFromLocal();
+        snapshot.forEach((d) => {
+          const b = d.data() as Booking;
+          if (isBookingMatchShowtime(b, showtime, movieTitle) && b.seatLabels) {
+            b.seatLabels.forEach((lbl) => bookedSet.add(lbl));
+          }
+        });
+        onUpdate(Array.from(bookedSet));
+      },
+      (err) => {
+        console.warn('⚠️ Lỗi onSnapshot Firestore booked seats:', err);
+        onUpdate(Array.from(getFromLocal()));
+      }
+    );
+  } catch (e) {
+    onUpdate(Array.from(getFromLocal()));
+    return () => {};
   }
 };

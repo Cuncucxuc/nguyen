@@ -30,12 +30,6 @@ export const Banner: React.FC<BannerProps> = ({ movies }) => {
     setCurrentIndex((prev) => (prev - 1 + displayMovies.length) % displayMovies.length);
   }, [displayMovies.length]);
 
-  const goToSlide = (idx: number) => {
-    setCurrentIndex(idx);
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(nextSlide, SLIDE_DURATION);
-  };
-
   // Tự động chuyển động slide liên tục
   useEffect(() => {
     if (displayMovies.length <= 1) return;
@@ -195,26 +189,6 @@ export const Banner: React.FC<BannerProps> = ({ movies }) => {
         </>
       )}
 
-      {/* Danh sách chấm tròn chỉ báo (Dot Indicators) sạch đẹp */}
-      {displayMovies.length > 1 && (
-        <div className="absolute bottom-6 inset-x-0 z-20 flex justify-center items-center gap-2">
-          {displayMovies.map((m, idx) => {
-            const isActive = idx === currentIndex;
-            return (
-              <button
-                key={m.id}
-                onClick={() => goToSlide(idx)}
-                aria-label={`Go to slide ${idx + 1}`}
-                className={`h-2.5 rounded-full transition-all duration-300 ${
-                  isActive
-                    ? 'w-8 bg-red-600 shadow-sm shadow-red-600/50'
-                    : 'w-2.5 bg-gray-500/50 hover:bg-gray-400'
-                }`}
-              />
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 };

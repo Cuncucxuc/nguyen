@@ -1,21 +1,33 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Film, Search } from 'lucide-react';
 import MovieCard from '../components/Home/MovieCard';
-import { movies } from '../data/mockData';
+import { movies as initialMovies } from '../data/mockData';
+import { subscribeMovies } from '../firebase/movieService';
 import { normalizeVietnamese } from '../utils';
 
 export const MoviesPage: React.FC = () => {
+  const [movies, setMovies] = useState(initialMovies);
   const [activeTab, setActiveTab] = useState<'all' | 'now_showing' | 'coming_soon'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<string>('Tất cả');
   const [selectedFormat, setSelectedFormat] = useState<string>('Tất cả');
+
+  // Lắng nghe cập nhật danh sách phim từ Firebase Firestore
+  useEffect(() => {
+    const unsubscribe = subscribeMovies((data) => {
+      if (data && data.length > 0) {
+        setMovies(data);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Danh sách thể loại
   const allGenres = useMemo(() => {
     const genreSet = new Set<string>();
     movies.forEach((m) => m.genre?.forEach((g) => genreSet.add(g)));
     return ['Tất cả', ...Array.from(genreSet)];
-  }, []);
+  }, [movies]);
 
   // Lọc phim
   const filteredMovies = useMemo(() => {
@@ -42,7 +54,7 @@ export const MoviesPage: React.FC = () => {
 
       return true;
     });
-  }, [activeTab, searchQuery, selectedGenre, selectedFormat]);
+  }, [movies, activeTab, searchQuery, selectedGenre, selectedFormat]);
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-white py-10 px-4 sm:px-6 lg:px-8">
@@ -72,7 +84,7 @@ export const MoviesPage: React.FC = () => {
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              Tất Cả ({movies.length})
+              Tất Cả
             </button>
             <button
               onClick={() => setActiveTab('now_showing')}
@@ -82,7 +94,7 @@ export const MoviesPage: React.FC = () => {
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              Đang Chiếu ({movies.filter((m) => m.status === 'now_showing').length})
+              Đang Chiếu
             </button>
             <button
               onClick={() => setActiveTab('coming_soon')}
@@ -92,7 +104,7 @@ export const MoviesPage: React.FC = () => {
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              Sắp Chiếu ({movies.filter((m) => m.status === 'coming_soon').length})
+              Sắp Chiếu
             </button>
           </div>
         </div>

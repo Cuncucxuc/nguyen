@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   Star,
@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Movie } from '../types';
 import { movies, cinemas, showtimes } from '../data/mockData';
+import { getMovieByIdFromFirestore } from '../firebase/movieService';
 import { getAgeRatingInfo, formatDateLabel, formatCurrency } from '../utils';
 
 export const MovieDetailPage: React.FC = () => {
@@ -28,9 +29,15 @@ export const MovieDetailPage: React.FC = () => {
   const [isLiked, setIsLiked] = useState<boolean>(false);
   const [showTrailerModal, setShowTrailerModal] = useState<boolean>(false);
 
-  // Tìm phim theo ID
-  const movie: Movie | undefined = useMemo(() => {
-    return movies.find((m) => m.id === id);
+  // Tìm phim theo ID (kết hợp cache tĩnh và Firestore)
+  const [movie, setMovie] = useState<Movie | undefined>(() => movies.find((m) => m.id === id));
+
+  useEffect(() => {
+    if (id) {
+      getMovieByIdFromFirestore(id).then((m) => {
+        if (m) setMovie(m);
+      });
+    }
   }, [id]);
 
   // Lọc lịch chiếu của phim này

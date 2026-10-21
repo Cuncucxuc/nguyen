@@ -82,9 +82,13 @@ export interface SelectedCombo {
 export interface Booking {
   id: string;
   orderId?: string;  // Mã đơn hàng (định dạng: CV-YYYYMMDD-XXX)
+  showtimeId?: string; // ID suất chiếu liên kết
+  movieId?: string;
   movieTitle: string;
   moviePoster: string;
+  cinemaId?: string;
   cinemaName: string;
+  roomId?: string;
   roomName: string;
   date?: string;       // Ngày chiếu (YYYY-MM-DD)
   startTime?: string;  // Giờ chiếu (HH:MM)

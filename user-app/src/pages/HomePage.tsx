@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Ticket, Popcorn, Gift, Sparkles, ShieldCheck, HeartHandshake, ArrowRight, Zap, Star } from 'lucide-react';
 import Banner from '../components/Home/Banner';
 import MovieList from '../components/Home/MovieList';
@@ -6,14 +6,26 @@ import SearchBar from '../components/Common/SearchBar';
 import QuickBookingBar from '../components/Home/QuickBookingBar';
 import ComboModal from '../components/Home/ComboModal';
 import RewardsModal from '../components/Home/RewardsModal';
-import { movies } from '../data/mockData';
+import { movies as initialMovies } from '../data/mockData';
+import { subscribeMovies } from '../firebase/movieService';
 import { useAuth } from '../context/AuthContext';
 import { normalizeVietnamese } from '../utils';
 
 export const HomePage: React.FC = () => {
   const { user } = useAuth();
+  const [movies, setMovies] = useState(initialMovies);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<string>('Tất cả');
+
+  // Lắng nghe cập nhật phim từ Firebase Firestore theo thời gian thực
+  useEffect(() => {
+    const unsubscribe = subscribeMovies((data) => {
+      if (data && data.length > 0) {
+        setMovies(data);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Quản lý Modal cho 3 chức năng
   const [isComboModalOpen, setIsComboModalOpen] = useState(false);
@@ -31,7 +43,7 @@ export const HomePage: React.FC = () => {
       m.genre?.forEach((g) => genreSet.add(g));
     });
     return ['Tất cả', ...Array.from(genreSet)];
-  }, []);
+  }, [movies]);
 
   // Lọc phim theo tìm kiếm và thể loại
   const filteredMovies = useMemo(() => {
@@ -53,7 +65,7 @@ export const HomePage: React.FC = () => {
 
       return matchSearch && matchGenre;
     });
-  }, [searchQuery, selectedGenre]);
+  }, [movies, searchQuery, selectedGenre]);
 
   // Phim đang chiếu & phim sắp chiếu
   const nowShowingMovies = useMemo(

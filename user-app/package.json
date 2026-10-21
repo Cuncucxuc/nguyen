@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "seed:movies": "vite-node scripts/seedMovies.mjs",
+    "seed:all": "vite-node scripts/seedAll.mjs"
   },
   "dependencies": {
     "firebase": "^10.7.0",

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Showtime, Seat, SelectedCombo, Booking } from '../types';
 import { movies, showtimes } from '../data/mockData';
+import { getMovieByIdFromFirestore } from '../firebase/movieService';
 import { useAuth } from '../context/AuthContext';
 import { saveBookingToFirestore } from '../firebase/bookingService';
 import { BookingSteps } from '../components/Booking/BookingSteps';
@@ -39,8 +40,14 @@ export const BookingPage: React.FC = () => {
   }, [isAuthenticated, navigate, location]);
 
   // Find movie
-  const movie = useMemo(() => {
-    return movies.find((m) => m.id === movieId);
+  const [movie, setMovie] = useState(() => movies.find((m) => m.id === movieId));
+
+  useEffect(() => {
+    if (movieId) {
+      getMovieByIdFromFirestore(movieId).then((m) => {
+        if (m) setMovie(m);
+      });
+    }
   }, [movieId]);
 
   // Stepper State (0: Showtime, 1: Seat, 2: Combo, 3: Payment)
@@ -114,9 +121,13 @@ export const BookingPage: React.FC = () => {
     const bookingRecord: Booking = {
       id: bookingCode,
       orderId: 'CV-' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '-' + bookingCode.slice(-3),
+      showtimeId: selectedShowtime?.id,
+      movieId: movie?.id,
       movieTitle: movie?.title || 'Phim Chiếu Rạp',
       moviePoster: movie?.poster || '',
+      cinemaId: selectedShowtime?.cinemaId,
       cinemaName: selectedShowtime?.cinemaName || '',
+      roomId: selectedShowtime?.roomId,
       roomName: selectedShowtime?.roomName || '',
       date: selectedShowtime?.date || '',
       startTime: selectedShowtime?.startTime || '',
@@ -203,6 +214,7 @@ export const BookingPage: React.FC = () => {
                   selectedSeats={selectedSeats}
                   onSeatChange={setSelectedSeats}
                   maxSeats={8}
+                  movieTitle={movie?.title}
                 />
 
                 {/* Step Action Buttons */}

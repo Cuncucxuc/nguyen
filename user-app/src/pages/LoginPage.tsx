@@ -56,21 +56,6 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    // In a real flow, this triggers OAuth or redirects
-    try {
-      setIsLoading(true);
-      setErrorMessage(null);
-      // For demonstration or mocked auth flow
-      await login('user@cineviet.vn', 'password123');
-      navigate('/');
-    } catch (err: any) {
-      setErrorMessage('Đăng nhập bằng Google không thành công. Vui lòng thử lại.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-12 bg-[#0f0f0f]">
       <div className="w-full max-w-md">
@@ -179,43 +164,6 @@ export const LoginPage: React.FC = () => {
             </button>
           </form>
 
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-800" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-gray-900 px-3 text-gray-400 font-medium">Hoặc</span>
-            </div>
-          </div>
-
-          {/* Google Login Button */}
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            disabled={isLoading}
-            className="w-full py-3 px-4 rounded-xl bg-gray-800 hover:bg-gray-750 border border-gray-700 text-white font-medium text-sm transition-colors duration-200 flex items-center justify-center gap-3 disabled:opacity-50 cursor-pointer"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
-              <path
-                fill="#4285F4"
-                d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
-              />
-              <path
-                fill="#34A853"
-                d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.98 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
-              />
-              <path
-                fill="#EA4335"
-                d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
-              />
-            </svg>
-            <span>Tiếp tục với Google</span>
-          </button>
 
           {/* Bottom link to Register */}
           <div className="mt-8 text-center text-sm text-gray-400">
