@@ -87,15 +87,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             );
           })}
         </nav>
-
-        {/* Footer Info */}
-        <div className="p-4 border-t border-[#23293b]">
-          <div className="flex items-center gap-2 px-2 text-[11px] text-emerald-400">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-gray-400">Firebase:</span>
-            <span className="font-semibold">xemphim-c8996</span>
-          </div>
-        </div>
       </aside>
     </>
   );
