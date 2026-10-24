@@ -19,7 +19,7 @@ import { Movie } from '../types';
 import { movies, cinemas, showtimes } from '../data/mockData';
 import { getMovieByIdFromFirestore } from '../firebase/movieService';
 import { getShowtimesForMovie } from '../utils/showtimeGenerator';
-import { getAgeRatingInfo, formatDateLabel, formatCurrency } from '../utils';
+import { getAgeRatingInfo, formatDateLabel, formatCurrency, isShowtimePast } from '../utils';
 
 export const MovieDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -398,28 +398,49 @@ export const MovieDetailPage: React.FC = () => {
                     {/* Showtime Slots Grid */}
                     <div className="pt-2">
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                        {list.map((st: any) => (
-                          // showtimeId được BookingPage đọc qua useSearchParams để tự chọn suất chiếu
-                          <Link
-                            key={st.id}
-                            to={`/dat-ve/${movie.id}?showtimeId=${st.id}`}
-                            className="group/slot flex flex-col items-center justify-center p-3 rounded-xl bg-gray-800/90 hover:bg-red-600 border border-gray-700/80 hover:border-red-500 transition-all duration-200 text-center shadow-md hover:shadow-red-600/30"
-                          >
-                            <span className="text-base sm:text-lg font-bold text-white group-hover/slot:text-white">
-                              {st.startTime}
-                            </span>
-                            <span className="text-[11px] text-gray-400 group-hover/slot:text-red-100 font-medium mt-0.5">
-                              {st.format || st.roomType || '2D Phụ đề'}
-                            </span>
-                            <span className="text-xs text-yellow-400 group-hover/slot:text-white font-semibold mt-1">
-                              {formatCurrency(
-                                typeof st.price === 'number'
-                                  ? st.price
-                                  : st.price?.standard || 85000
-                              )}
-                            </span>
-                          </Link>
-                        ))}
+                        {list.map((st: any) => {
+                          const isPast = isShowtimePast(st.date || selectedDate, st.startTime);
+                          if (isPast) {
+                            return (
+                              <div
+                                key={st.id}
+                                title="Suất chiếu đã qua giờ bắt đầu, không thể đặt vé"
+                                className="flex flex-col items-center justify-center p-3 rounded-xl bg-gray-900/40 border border-gray-800/80 opacity-40 cursor-not-allowed text-center select-none shadow-none"
+                              >
+                                <span className="text-base sm:text-lg font-bold text-gray-500 line-through">
+                                  {st.startTime}
+                                </span>
+                                <span className="text-[11px] text-gray-600 font-medium mt-0.5">
+                                  {st.format || st.roomType || '2D Phụ đề'}
+                                </span>
+                                <span className="text-[10px] text-red-400/90 font-medium mt-1">
+                                  Đã qua giờ
+                                </span>
+                              </div>
+                            );
+                          }
+                          return (
+                            <Link
+                              key={st.id}
+                              to={`/dat-ve/${movie.id}?showtimeId=${st.id}`}
+                              className="group/slot flex flex-col items-center justify-center p-3 rounded-xl bg-gray-800/90 hover:bg-red-600 border border-gray-700/80 hover:border-red-500 transition-all duration-200 text-center shadow-md hover:shadow-red-600/30"
+                            >
+                              <span className="text-base sm:text-lg font-bold text-white group-hover/slot:text-white">
+                                {st.startTime}
+                              </span>
+                              <span className="text-[11px] text-gray-400 group-hover/slot:text-red-100 font-medium mt-0.5">
+                                {st.format || st.roomType || '2D Phụ đề'}
+                              </span>
+                              <span className="text-xs text-yellow-400 group-hover/slot:text-white font-semibold mt-1">
+                                {formatCurrency(
+                                  typeof st.price === 'number'
+                                    ? st.price
+                                    : st.price?.standard || 85000
+                                )}
+                              </span>
+                            </Link>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>

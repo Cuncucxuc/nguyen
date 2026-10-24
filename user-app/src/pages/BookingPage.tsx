@@ -23,7 +23,7 @@ import { ShowtimeSelection } from '../components/Booking/ShowtimeSelection';
 import { SeatMap } from '../components/Booking/SeatMap';
 import { ComboSelection } from '../components/Booking/ComboSelection';
 import { PaymentSummary } from '../components/Booking/PaymentSummary';
-import { getSeatLabel, formatCurrency } from '../utils';
+import { getSeatLabel, formatCurrency, isShowtimePast } from '../utils';
 
 export const BookingPage: React.FC = () => {
   const { movieId } = useParams<{ movieId: string }>();
@@ -56,17 +56,25 @@ export const BookingPage: React.FC = () => {
   const [selectedShowtime, setSelectedShowtime] = useState<Showtime | null>(null);
   const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
   const [selectedCombos, setSelectedCombos] = useState<SelectedCombo[]>([]);
+  const [expiredAlertMessage, setExpiredAlertMessage] = useState<string | null>(null);
 
   // Auto-select showtime if showtimeId is provided in URL
   useEffect(() => {
     if (showtimeIdParam && !selectedShowtime) {
       const foundSt = findShowtimeById(showtimeIdParam, movieId);
       if (foundSt) {
-        setSelectedShowtime(foundSt);
-        setCurrentStep(1); // Jump to seat selection
+        if (isShowtimePast(foundSt.date, foundSt.startTime)) {
+          setExpiredAlertMessage(
+            `Suất chiếu lúc ${foundSt.startTime} ngày ${foundSt.date} tại ${foundSt.cinemaName} đã qua giờ chiếu. Vui lòng chọn một suất chiếu khác!`
+          );
+          setCurrentStep(0);
+        } else {
+          setSelectedShowtime(foundSt);
+          setCurrentStep(1); // Jump to seat selection
+        }
       }
     }
-  }, [showtimeIdParam, selectedShowtime]);
+  }, [showtimeIdParam, selectedShowtime, movieId]);
 
   // Calculation for sidebar
   const seatsTotal = useMemo(() => {
@@ -84,6 +92,11 @@ export const BookingPage: React.FC = () => {
 
   // Handlers for steps
   const handleSelectShowtime = (st: Showtime) => {
+    if (isShowtimePast(st.date, st.startTime)) {
+      setExpiredAlertMessage(`Suất chiếu lúc ${st.startTime} đã qua thời gian bắt đầu. Vui lòng chọn một suất chiếu khác.`);
+      return;
+    }
+    setExpiredAlertMessage(null);
     setSelectedShowtime(st);
     // Clear seats if switching showtime
     setSelectedSeats([]);
@@ -93,11 +106,25 @@ export const BookingPage: React.FC = () => {
 
   const handleNextFromSeats = () => {
     if (selectedSeats.length === 0) return;
+    if (selectedShowtime && isShowtimePast(selectedShowtime.date, selectedShowtime.startTime)) {
+      setExpiredAlertMessage(`Suất chiếu đã chọn (${selectedShowtime.startTime}) đã qua giờ chiếu. Vui lòng chọn suất chiếu khác!`);
+      setSelectedShowtime(null);
+      setSelectedSeats([]);
+      setCurrentStep(0);
+      return;
+    }
     setCurrentStep(2);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleNextFromCombos = () => {
+    if (selectedShowtime && isShowtimePast(selectedShowtime.date, selectedShowtime.startTime)) {
+      setExpiredAlertMessage(`Suất chiếu đã chọn (${selectedShowtime.startTime}) đã qua giờ chiếu. Vui lòng chọn suất chiếu khác!`);
+      setSelectedShowtime(null);
+      setSelectedSeats([]);
+      setCurrentStep(0);
+      return;
+    }
     setCurrentStep(3);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -115,6 +142,14 @@ export const BookingPage: React.FC = () => {
     discountAmount: number;
     finalTotal: number;
   }) => {
+    if (selectedShowtime && isShowtimePast(selectedShowtime.date, selectedShowtime.startTime)) {
+      alert('Suất chiếu đã chọn đã qua giờ chiếu. Không thể hoàn tất giao dịch! Vui lòng chọn suất khác.');
+      setSelectedShowtime(null);
+      setSelectedSeats([]);
+      setCurrentStep(0);
+      return;
+    }
+
     const bookingCode = 'BK' + Math.floor(100000 + Math.random() * 900000);
     const finalAmount = paymentData ? paymentData.finalTotal : totalAmount;
 
@@ -198,6 +233,26 @@ export const BookingPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Main Booking Step Flow (8 cols) */}
           <div className="lg:col-span-8 space-y-6">
+            {/* Expired Showtime Alert */}
+            {expiredAlertMessage && (
+              <div className="bg-red-950/60 border border-red-700/80 rounded-2xl p-4 flex items-start justify-between gap-3 text-red-200 animate-fadeIn">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-bold text-sm text-red-300">Không thể chọn suất chiếu này</h4>
+                    <p className="text-xs text-red-200/90 mt-0.5">{expiredAlertMessage}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setExpiredAlertMessage(null)}
+                  className="text-red-400 hover:text-white text-xs font-semibold px-2 py-1 rounded-md hover:bg-red-900/40 transition cursor-pointer"
+                >
+                  Đóng
+                </button>
+              </div>
+            )}
+
             {/* Step 0: Showtime Selection */}
             {currentStep === 0 && (
               <ShowtimeSelection

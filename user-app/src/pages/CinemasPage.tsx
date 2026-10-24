@@ -4,6 +4,7 @@ import { MapPin, Phone, Clock, Film, Ticket, ChevronDown, ChevronUp, Navigation 
 import { cinemas, movies as defaultMovies, showtimeDates } from '../data/mockData';
 import { subscribeMovies } from '../firebase/movieService';
 import { getShowtimesForMovie } from '../utils/showtimeGenerator';
+import { isShowtimePast } from '../utils';
 
 export const CinemasPage: React.FC = () => {
   const [allMovies, setAllMovies] = useState(defaultMovies);
@@ -215,18 +216,35 @@ export const CinemasPage: React.FC = () => {
 
                               {/* Suất chiếu buttons */}
                               <div className="flex flex-wrap items-center gap-2">
-                                {mShowtimes.map((st) => (
-                                  <Link
-                                    key={st.id}
-                                    to={`/dat-ve/${movie.id}?showtimeId=${st.id}`}
-                                    className="px-3.5 py-2 rounded-xl bg-gray-800 hover:bg-red-600 hover:text-white border border-gray-700 hover:border-red-600 text-gray-200 text-xs font-bold transition-all shadow-sm flex flex-col items-center"
-                                  >
-                                    <span>{st.startTime}</span>
-                                    <span className="text-[10px] text-gray-400 hover:text-white font-normal mt-0.5">
-                                      {st.roomType}
-                                    </span>
-                                  </Link>
-                                ))}
+                                {mShowtimes.map((st) => {
+                                  const isPast = isShowtimePast(st.date || selectedDate, st.startTime);
+                                  if (isPast) {
+                                    return (
+                                      <div
+                                        key={st.id}
+                                        title="Suất chiếu đã qua giờ bắt đầu, không thể đặt vé"
+                                        className="px-3.5 py-2 rounded-xl bg-gray-900/40 border border-gray-800 text-gray-500 text-xs font-bold opacity-40 cursor-not-allowed flex flex-col items-center select-none shadow-none"
+                                      >
+                                        <span className="line-through">{st.startTime}</span>
+                                        <span className="text-[10px] text-red-400/90 font-normal mt-0.5">
+                                          Đã qua giờ
+                                        </span>
+                                      </div>
+                                    );
+                                  }
+                                  return (
+                                    <Link
+                                      key={st.id}
+                                      to={`/dat-ve/${movie.id}?showtimeId=${st.id}`}
+                                      className="px-3.5 py-2 rounded-xl bg-gray-800 hover:bg-red-600 hover:text-white border border-gray-700 hover:border-red-600 text-gray-200 text-xs font-bold transition-all shadow-sm flex flex-col items-center"
+                                    >
+                                      <span>{st.startTime}</span>
+                                      <span className="text-[10px] text-gray-400 hover:text-white font-normal mt-0.5">
+                                        {st.roomType}
+                                      </span>
+                                    </Link>
+                                  );
+                                })}
                               </div>
                             </div>
                           );

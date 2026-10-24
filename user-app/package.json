@@ -12,6 +12,7 @@
     "seed:all": "vite-node scripts/seedAll.mjs"
   },
   "dependencies": {
+    "cineviet-workspace": "file:..",
     "firebase": "^10.7.0",
     "lucide-react": "^0.294.0",
     "qrcode.react": "^3.1.0",

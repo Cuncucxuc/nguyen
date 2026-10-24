@@ -3,7 +3,7 @@ import { MapPin, Calendar, Clock, Film, Sparkles, ChevronRight, CalendarX } from
 import { Showtime, Cinema } from '../../types';
 import { cinemas as allCinemas } from '../../data/mockData';
 import { getShowtimesForMovie } from '../../utils/showtimeGenerator';
-import { formatCurrency } from '../../utils';
+import { formatCurrency, isShowtimePast } from '../../utils';
 
 interface ShowtimeSelectionProps {
   movieId: string;
@@ -180,10 +180,25 @@ export const ShowtimeSelection: React.FC<ShowtimeSelectionProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 self-end sm:self-center text-xs text-gray-400 bg-gray-800/60 px-2.5 py-1 rounded-md">
-                  <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
-                  <span>{showtimes.length} suất chiếu</span>
-                </div>
+                {(() => {
+                  const availableCount = showtimes.filter((s) => !isShowtimePast(s.date, s.startTime)).length;
+                  return (
+                    <div
+                      className={`flex items-center gap-2 self-end sm:self-center text-xs px-2.5 py-1 rounded-md ${
+                        availableCount > 0
+                          ? 'text-gray-400 bg-gray-800/60'
+                          : 'text-red-400 bg-red-950/40 border border-red-900/50'
+                      }`}
+                    >
+                      <Sparkles className={`w-3.5 h-3.5 ${availableCount > 0 ? 'text-yellow-400' : 'text-red-400'}`} />
+                      <span>
+                        {availableCount > 0
+                          ? `${availableCount}/${showtimes.length} suất khả dụng`
+                          : 'Hết suất chiếu khả dụng hôm nay'}
+                      </span>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Showtime Buttons Grid */}
@@ -191,30 +206,41 @@ export const ShowtimeSelection: React.FC<ShowtimeSelectionProps> = ({
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                   {showtimes.map((st) => {
                     const isSelected = selectedShowtime?.id === st.id;
+                    const isPast = isShowtimePast(st.date, st.startTime);
                     const formatBadge = st.roomType || '2D';
 
                     return (
                       <button
                         key={st.id}
                         type="button"
-                        onClick={() => onSelect(st)}
+                        disabled={isPast}
+                        onClick={() => !isPast && onSelect(st)}
+                        title={isPast ? 'Suất chiếu này đã qua giờ bắt đầu, không thể đặt vé' : undefined}
                         className={`group relative p-3 rounded-xl border text-left transition-all duration-200 flex flex-col justify-between ${
-                          isSelected
-                            ? 'border-red-500 bg-red-600/20 ring-2 ring-red-500/50 shadow-md shadow-red-600/20'
-                            : 'border-gray-800 bg-gray-800/60 hover:bg-gray-800 hover:border-red-500/50 hover:shadow'
+                          isPast
+                            ? 'border-gray-800/60 bg-gray-900/40 opacity-40 cursor-not-allowed select-none'
+                            : isSelected
+                            ? 'border-red-500 bg-red-600/20 ring-2 ring-red-500/50 shadow-md shadow-red-600/20 cursor-pointer'
+                            : 'border-gray-800 bg-gray-800/60 hover:bg-gray-800 hover:border-red-500/50 hover:shadow cursor-pointer'
                         }`}
                       >
                         <div className="flex items-center justify-between mb-1.5">
                           <span
                             className={`text-lg font-extrabold tracking-tight ${
-                              isSelected ? 'text-red-400' : 'text-white group-hover:text-red-300'
+                              isPast
+                                ? 'text-gray-500 line-through'
+                                : isSelected
+                                ? 'text-red-400'
+                                : 'text-white group-hover:text-red-300'
                             }`}
                           >
                             {st.startTime}
                           </span>
                           <span
                             className={`text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wider ${
-                              formatBadge.includes('IMAX')
+                              isPast
+                                ? 'bg-gray-800 text-gray-500 border border-gray-700/40'
+                                : formatBadge.includes('IMAX')
                                 ? 'bg-blue-900/60 text-blue-300 border border-blue-700/50'
                                 : formatBadge.includes('VIP')
                                 ? 'bg-yellow-900/60 text-yellow-300 border border-yellow-700/50'
@@ -227,12 +253,18 @@ export const ShowtimeSelection: React.FC<ShowtimeSelectionProps> = ({
 
                         <div className="text-[11px] text-gray-400 flex items-center justify-between mt-1">
                           <span className="truncate max-w-[90px]">{st.roomName}</span>
-                          <span className="text-red-400 font-semibold group-hover:text-red-300">
-                            từ {formatCurrency(st.price.standard)}
-                          </span>
+                          {isPast ? (
+                            <span className="text-[10px] text-red-400/90 font-medium">
+                              Đã qua giờ
+                            </span>
+                          ) : (
+                            <span className="text-red-400 font-semibold group-hover:text-red-300">
+                              từ {formatCurrency(st.price.standard)}
+                            </span>
+                          )}
                         </div>
 
-                        {isSelected && (
+                        {isSelected && !isPast && (
                           <div className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-600 text-white rounded-full flex items-center justify-center text-[10px]">
                             ✓
                           </div>

@@ -4,6 +4,7 @@ import { Ticket, Film, MapPin, Calendar, Clock, ArrowRight } from 'lucide-react'
 import { movies as defaultMovies, cinemas } from '../../data/mockData';
 import { subscribeMovies } from '../../firebase/movieService';
 import { getShowtimesForMovie } from '../../utils/showtimeGenerator';
+import { isShowtimePast } from '../../utils';
 
 interface QuickBookingBarProps {
   onSuccess?: () => void;
@@ -70,14 +71,15 @@ export const QuickBookingBar: React.FC<QuickBookingBarProps> = ({ onSuccess }) =
     }
   }, [availableDates, selectedDate]);
 
-  // 3. Danh sách suất chiếu tương ứng (hỗ trợ cả phim mới từ Admin)
+  // 3. Danh sách suất chiếu tương ứng (hỗ trợ cả phim mới từ Admin, chỉ lấy các suất chưa qua giờ)
   const availableShowtimes = useMemo(() => {
     if (!selectedMovieId || !selectedCinemaId || !selectedDate) return [];
     const movieShowtimes = getShowtimesForMovie(selectedMovieId, cinemas);
     return movieShowtimes.filter(
       (s) =>
         s.cinemaId === selectedCinemaId &&
-        s.date === selectedDate
+        s.date === selectedDate &&
+        !isShowtimePast(s.date, s.startTime)
     );
   }, [selectedMovieId, selectedCinemaId, selectedDate]);
 
@@ -207,8 +209,8 @@ export const QuickBookingBar: React.FC<QuickBookingBarProps> = ({ onSuccess }) =
       <div className="mt-4 pt-3 border-t border-gray-800 flex justify-end">
         <button
           onClick={handleBooking}
-          disabled={!selectedMovieId}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-all duration-200 shadow-lg shadow-red-600/30 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
+          disabled={!selectedMovieId || availableShowtimes.length === 0}
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-all duration-200 shadow-lg shadow-red-600/30 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <span>ĐẶT VÉ NGAY</span>
           <ArrowRight className="w-4 h-4" />

@@ -102,3 +102,37 @@ export const formatDateLabel = (dateStr: string) => {
     return { dayOfWeek: 'Ngày', dateNum: dateStr };
   }
 };
+
+/**
+ * Kiểm tra xem một suất chiếu đã qua thời gian hiện tại hay chưa.
+ * @param dateStr Ngày chiếu định dạng 'YYYY-MM-DD'
+ * @param startTimeStr Giờ chiếu định dạng 'HH:MM' (24h)
+ * @returns true nếu thời gian chiếu đã trôi qua so với hiện tại (quá giờ trong cùng ngày hoặc ngày cũ)
+ */
+export const isShowtimePast = (dateStr?: string, startTimeStr?: string): boolean => {
+  if (!dateStr || !startTimeStr) return false;
+
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  const todayStr = `${y}-${m}-${d}`;
+
+  // Nếu ngày chiếu trong quá khứ -> đã hết hạn
+  if (dateStr < todayStr) return true;
+  // Nếu ngày chiếu trong tương lai -> còn hạn
+  if (dateStr > todayStr) return false;
+
+  // Nếu trong cùng ngày hôm nay: so sánh giờ và phút
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+
+  const [stHour, stMinute] = startTimeStr.split(':').map((val) => parseInt(val, 10));
+  if (isNaN(stHour) || isNaN(stMinute)) return false;
+
+  if (stHour < currentHour) return true;
+  if (stHour === currentHour && stMinute <= currentMinute) return true;
+
+  return false;
+};
+
